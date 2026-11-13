@@ -42,8 +42,31 @@ var (
 	// ErrMergeNotSupported is returned when merging is attempted on a record type that does not support it.
 	ErrMergeNotSupported = errors.New("gowarc: merging is only possible for revisit records or segmented records")
 
-	// ErrMergeSegmentedNotImplemented is returned when merging of segmented records is attempted.
-	ErrMergeSegmentedNotImplemented = errors.New("gowarc: merging of segmented records is not implemented")
+	// ErrMergeSegmentType is returned when a record supplied to a segmented merge is not a continuation record.
+	ErrMergeSegmentType = errors.New("gowarc: segmented merge requires continuation records as input")
+
+	// ErrMergeSegmentOriginID is returned when a continuation record's WARC-Segment-Origin-ID
+	// does not match the first segment's WARC-Record-ID.
+	ErrMergeSegmentOriginID = errors.New("gowarc: continuation record WARC-Segment-Origin-ID does not match first segment WARC-Record-ID")
+
+	// ErrMergeSegmentTargetURI is returned when a continuation record's WARC-Target-URI
+	// differs from the first segment's WARC-Target-URI.
+	ErrMergeSegmentTargetURI = errors.New("gowarc: continuation record WARC-Target-URI does not match first segment")
+
+	// ErrMergeSegmentNumber is returned when continuation records have invalid or duplicate
+	// WARC-Segment-Number values.
+	ErrMergeSegmentNumber = errors.New("gowarc: continuation records have invalid or duplicate segment numbers")
+
+	// ErrMergeSegmentMissing is returned when continuation records are missing from a segmented merge.
+	ErrMergeSegmentMissing = errors.New("gowarc: missing continuation segments")
+
+	// ErrMergeSegmentLastSegment is returned when zero or more than one segment carries
+	// WARC-Segment-Total-Length, or when it is not carried by the last segment.
+	ErrMergeSegmentLastSegment = errors.New("gowarc: segmented merge requires exactly one last segment with WARC-Segment-Total-Length")
+
+	// ErrMergeSegmentTotalLength is returned when the sum of the segment content lengths
+	// does not match WARC-Segment-Total-Length.
+	ErrMergeSegmentTotalLength = errors.New("gowarc: sum of segment content lengths does not match WARC-Segment-Total-Length")
 
 	// ErrMergeWrongBlockType is returned when a revisit record's block type is incompatible with merging
 	// (typically because the record was parsed with SkipParseBlock).

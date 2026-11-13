@@ -646,7 +646,7 @@ func Test_warcRecord_Merge_ErrorPaths(t *testing.T) {
 		wantErr string
 	}{
 		{
-			"segmented record",
+			"segmented record without continuation records",
 			func() WarcRecord {
 				return createRecord1(Response, &WarcFields{
 					&nameValue{Name: WarcDate, Value: "2024-01-01T00:00:00Z"},
@@ -657,7 +657,7 @@ func Test_warcRecord_Merge_ErrorPaths(t *testing.T) {
 				}, "")
 			},
 			func() []WarcRecord { return nil },
-			"merging of segmented records is not implemented",
+			"missing continuation segments",
 		},
 		{
 			"non-revisit non-segmented record",

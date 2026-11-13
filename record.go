@@ -85,9 +85,18 @@ type WarcRecord interface {
 	// The RevisitRef might be used by another record's ToRevisitRecord to create a revisit record referencing this record.
 	CreateRevisitRef(profile string) (*RevisitRef, error)
 
-	// Merge merges this record with its referenced record(s)
+	// Merge merges this record with its referenced record(s).
 	//
-	// It is implemented only for revisit records, but this function will be enhanced to also support segmented records.
+	// For revisit records exactly one referenced record must be supplied, and this record
+	// is resolved into a full record using the referenced record's content.
+	//
+	// For segmented records (a response or resource record with WARC-Segment-Number: 1),
+	// all continuation records of the segment group must be supplied. They may be supplied
+	// in any order. The returned record is a new record with the content blocks of all
+	// segments concatenated as described by the WARC 1.1 specification, and with
+	// recalculated Content-Length and digest header fields. It must be closed independently
+	// of the input records. If merging fails, the input records' header fields are left
+	// unmodified.
 	Merge(record ...WarcRecord) (WarcRecord, error)
 
 	// ValidateDigest validates block and payload digests if present.
@@ -341,7 +350,7 @@ func (wr *warcRecord) CreateRevisitRef(profile string) (*RevisitRef, error) {
 
 func (wr *warcRecord) Merge(record ...WarcRecord) (WarcRecord, error) {
 	if wr.headers.Get(WarcSegmentNumber) == "1" {
-		return nil, ErrMergeSegmentedNotImplemented
+		return wr.mergeSegments(record...)
 	}
 	if wr.recordType != Revisit {
 		return nil, ErrMergeNotSupported
