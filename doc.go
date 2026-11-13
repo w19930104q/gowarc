@@ -40,7 +40,27 @@ To read entire WARC files, employ the [WarcFileReader] initialized through [NewW
 # Validation and repair
 
 The gowarc package supports validation during both the creation and parsing of WARC records.
-Control over the scope of validation and the handling of validation errors can be achieved by setting the appropriate
+Control over validation and the handling of validation errors can be achieved by setting the appropriate
 options in the [WarcRecordBuilder], [Unmarshaler], or [WarcFileReader].
+
+# Record segmentation and merging
+
+Large records may be split by a writer into a first segment of type 'response' or 'resource'
+(WARC-Segment-Number: 1) followed by one or more 'continuation' records linked through
+WARC-Segment-Origin-ID. Such a record is reassembled with [WarcRecord.Merge]: pass the first segment
+as the receiver and all of its continuation records as arguments. The continuations may be supplied
+in any order; they are ordered by WARC-Segment-Number during reassembly.
+
+Merge validates that every segment carries a WARC-Target-URI and that the values are identical, that
+segment numbers form a consecutive sequence starting at 1, that exactly one (last) segment carries
+WARC-Segment-Total-Length matching the reassembled length, and that every continuation references the
+first segment's record id. Missing headers, missing or duplicate segments, or a record of the wrong
+type make the merge fail with an explicit error.
+
+The result keeps the first segment's identity, adopts a WARC-Truncated marker from the last segment,
+drops the segmentation header fields, and re-establishes Content-Length and the block/payload
+digests. HTTP headers that span a segment boundary are parsed on the reassembled block. The input
+records are not modified and remain the caller's responsibility to close; the returned record owns
+its own buffer, is independently readable, and releases its resources on Close (and on failure).
 */
 package gowarc

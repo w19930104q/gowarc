@@ -42,8 +42,33 @@ var (
 	// ErrMergeNotSupported is returned when merging is attempted on a record type that does not support it.
 	ErrMergeNotSupported = errors.New("gowarc: merging is only possible for revisit records or segmented records")
 
-	// ErrMergeSegmentedNotImplemented is returned when merging of segmented records is attempted.
-	ErrMergeSegmentedNotImplemented = errors.New("gowarc: merging of segmented records is not implemented")
+	// ErrMergeSegmentRequiresContinuation is returned when a segmented merge is given a referenced
+	// record that is not of WARC type 'continuation'.
+	ErrMergeSegmentRequiresContinuation = errors.New("gowarc: segmented merge requires continuation records")
+
+	// ErrMergeSegmentMissingHeader is returned when a record that is part of a segmented merge is
+	// missing one of the mandatory WARC segmentation header fields.
+	ErrMergeSegmentMissingHeader = errors.New("gowarc: segmented record is missing a mandatory segmentation header")
+
+	// ErrMergeSegmentOriginMismatch is returned when a continuation record's WARC-Segment-Origin-ID
+	// does not identify the first segment's WARC-Record-ID.
+	ErrMergeSegmentOriginMismatch = errors.New("gowarc: continuation segment origin id does not match first segment")
+
+	// ErrMergeSegmentTargetURIMismatch is returned when the WARC-Target-URI of a segment differs
+	// from the WARC-Target-URI of the first segment or is missing.
+	ErrMergeSegmentTargetURIMismatch = errors.New("gowarc: segment target URI is missing or does not match first segment")
+
+	// ErrMergeSegmentNumber is returned when segment numbers are missing, not positive integers,
+	// do not form a consecutive sequence starting at 1, or occur more than once.
+	ErrMergeSegmentNumber = errors.New("gowarc: invalid segment numbering")
+
+	// ErrMergeSegmentTotalLength is returned when WARC-Segment-Total-Length is missing, malformed,
+	// occurs on more than one segment, or does not equal the reassembled block length.
+	ErrMergeSegmentTotalLength = errors.New("gowarc: invalid segment total length")
+
+	// ErrMergeSegmentUnsupportedType is returned when the first segment is neither a 'response'
+	// nor a 'resource' record, the only record types whose segmentation can be merged.
+	ErrMergeSegmentUnsupportedType = errors.New("gowarc: segmented merge is only supported for response and resource records")
 
 	// ErrMergeWrongBlockType is returned when a revisit record's block type is incompatible with merging
 	// (typically because the record was parsed with SkipParseBlock).

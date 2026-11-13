@@ -646,18 +646,19 @@ func Test_warcRecord_Merge_ErrorPaths(t *testing.T) {
 		wantErr string
 	}{
 		{
-			"segmented record",
+			"segmented record without continuations",
 			func() WarcRecord {
 				return createRecord1(Response, &WarcFields{
 					&nameValue{Name: WarcDate, Value: "2024-01-01T00:00:00Z"},
 					&nameValue{Name: WarcRecordID, Value: "<urn:uuid:00000000-0000-0000-0000-000000000001>"},
+					&nameValue{Name: WarcTargetURI, Value: "http://example.com"},
 					&nameValue{Name: ContentType, Value: "text/plain"},
 					&nameValue{Name: ContentLength, Value: "0"},
 					&nameValue{Name: WarcSegmentNumber, Value: "1"},
 				}, "")
 			},
 			func() []WarcRecord { return nil },
-			"merging of segmented records is not implemented",
+			"invalid segment numbering",
 		},
 		{
 			"non-revisit non-segmented record",

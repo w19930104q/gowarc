@@ -85,9 +85,19 @@ type WarcRecord interface {
 	// The RevisitRef might be used by another record's ToRevisitRecord to create a revisit record referencing this record.
 	CreateRevisitRef(profile string) (*RevisitRef, error)
 
-	// Merge merges this record with its referenced record(s)
+	// Merge merges this record with its referenced record(s).
 	//
-	// It is implemented only for revisit records, but this function will be enhanced to also support segmented records.
+	// Two kinds of merge are supported:
+	//
+	//   - Revisit records are merged with the single record they reference. The revisit record's
+	//     HTTP header is combined with the referenced record's payload and the result adopts the
+	//     referenced record's type. This mutates the receiver and returns it.
+	//   - Segmented records are merged by passing the first segment as the receiver and all of
+	//     its continuation records as arguments. The segments may be supplied out of order; they
+	//     are reassembled by WARC-Segment-Number. The result is a new, independently readable
+	//     record of the first segment's type (only 'response' and 'resource' are supported).
+	//     Neither the receiver nor the supplied continuation records are modified, and their
+	//     closing remains the caller's responsibility.
 	Merge(record ...WarcRecord) (WarcRecord, error)
 
 	// ValidateDigest validates block and payload digests if present.
@@ -340,8 +350,11 @@ func (wr *warcRecord) CreateRevisitRef(profile string) (*RevisitRef, error) {
 }
 
 func (wr *warcRecord) Merge(record ...WarcRecord) (WarcRecord, error) {
-	if wr.headers.Get(WarcSegmentNumber) == "1" {
-		return nil, ErrMergeSegmentedNotImplemented
+	// A record carrying any segmentation header, or one handed continuation records, is treated
+	// as the first segment of a segmented merge so that missing or malformed segmentation
+	// headers produce explicit validation errors.
+	if wr.headers.Has(WarcSegmentNumber) || wr.headers.Has(WarcSegmentOriginID) || hasContinuation(record) {
+		return mergeSegments(wr, record)
 	}
 	if wr.recordType != Revisit {
 		return nil, ErrMergeNotSupported

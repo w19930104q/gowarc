@@ -55,6 +55,33 @@ func main() {
 }
 ```
 
+### Merging segmented records
+
+A large record may be split by a writer into a first segment (`response` or `resource` with
+`WARC-Segment-Number: 1`) followed by one or more `continuation` records. Reassemble them with
+`WarcRecord.Merge`, passing the first segment as the receiver and all continuation records. The
+continuations may be given in any order; they are ordered by `WARC-Segment-Number`.
+
+```go
+// first is the segment with WARC-Segment-Number: 1, continuations are the related
+// 'continuation' records. Blocks must still hold their content (cached or seekable).
+merged, err := first.Merge(continuations...)
+if err != nil {
+    // Explicit errors for missing headers, missing/duplicate segments, origin or
+    // target-URI mismatch, non-unique total length, or a non-continuation record.
+    log.Fatal(err)
+}
+defer merged.Close()
+```
+
+The merge validates the segment origin id, consecutive segment numbers, a unique terminal
+`WARC-Segment-Total-Length` equal to the reassembled length, and that every segment has the same
+`WARC-Target-URI`. The result keeps the first segment's identity, adopts a `WARC-Truncated` marker
+from the last segment, removes the segmentation headers, and recalculates `Content-Length` and the
+block/payload digests. HTTP headers spanning a segment boundary are parsed on the reassembled
+block. Input records are not modified and stay the caller's responsibility to close; the returned
+record owns an independent, re-readable buffer that is released on `Close`.
+
 ### godoc
 
 For complete documentation and examples consult the godoc online at: https://pkg.go.dev/github.com/nlnwa/gowarc/v3
